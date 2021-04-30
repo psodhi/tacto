@@ -18,7 +18,7 @@ The handle for OSMesa is osmesa.
 Default is pyglet, which requires active window
 """
 
-# import os
+import os
 # os.environ["PYOPENGL_PLATFORM"] = "egl"
 
 import logging
@@ -43,6 +43,30 @@ def euler2matrix(angles=[0, 0, 0], translation=[0, 0, 0]):
     pose[:3, 3] = translation
     pose[:3, :3] = r
     return pose
+
+class NormalShaderCache():
+    def __init__(self):
+        self.program = None
+        self.pkg_dir = os.path.dirname(__file__)
+
+    def get_program(self, vertex_shader, fragment_shader, geometry_shader=None, defines=None):
+        if self.program is None:
+            self.program=pyrender.shader_program.ShaderProgram(
+                "{0}/shaders/mesh_normals.vert".format(self.pkg_dir), 
+                "{0}/shaders/mesh_normals.frag".format(self.pkg_dir), defines=defines)
+        return self.program
+
+class SilhouetteShaderCache():
+    def __init__(self):
+        self.program = None
+        self.pkg_dir = os.path.dirname(__file__)
+
+    def get_program(self, vertex_shader, fragment_shader, geometry_shader=None, defines=None):
+        if self.program is None:
+            self.program=pyrender.shader_program.ShaderProgram(
+                "{0}/shaders/mesh_silhouette.vert".format(self.pkg_dir), 
+                "{0}/shaders/mesh_silhouette.frag".format(self.pkg_dir), defines=defines)
+        return self.program
 
 
 class Renderer:
@@ -114,7 +138,7 @@ class Renderer:
 
         self.r = pyrender.OffscreenRenderer(self.width, self.height)
 
-        colors, depths = self.render(object_poses=None, noise=False, calibration=False)
+        colors, depths, normals, silhouettes = self.render(object_poses=None, noise=False, calibration=False)
 
         self.depth0 = depths
         self._background_sim = colors
@@ -492,7 +516,7 @@ class Renderer:
         :param noise:
         :return:
         """
-        colors, depths = [], []
+        colors, depths, normals, silhouettes = [], [], [], []
 
         for i in range(self.nb_cam):
             # Set the main camera node for rendering
@@ -512,13 +536,29 @@ class Renderer:
                     camera_pos, camera_ori, normal_forces, object_poses,
                 )
 
+            default_program_cache = self.r._renderer._program_cache
+
+            # render color, depth
             color, depth = self.r.render(self.scene)
             color, depth = self._post_process(color, depth, i, noise, calibration)
-
             colors.append(color)
             depths.append(depth)
 
-        return colors, depths
+            # render normals
+            self.r._renderer._program_cache = NormalShaderCache()
+            normal, _ = self.r.render(self.scene)
+            # normal = normal / 255 * 2 - 1
+            self.r._renderer._program_cache = default_program_cache
+            normals.append(normal)
+
+            # render silhouettes
+            self.r._renderer._program_cache = SilhouetteShaderCache()
+            silhouette, _ = self.r.render(self.scene)
+            # silhouette = silhouette / 255 * 2 - 1
+            self.r._renderer._program_cache = default_program_cache
+            silhouettes.append(silhouette)
+
+        return colors, depths, normals, silhouettes
 
     def render_from_depth(self, depth, noise=True, calibration=True, scale=1.0):
         """

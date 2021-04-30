@@ -235,16 +235,16 @@ class Sensor:
     @property
     def static(self):
         if self._static is None:
-            colors, _ = self.renderer.render(noise=False)
+            colors, depths, normals, silhouettes = self.renderer.render(noise=False)
             depths = [np.zeros_like(d0) for d0 in self.renderer.depth0]
-            self._static = (colors, depths)
+            self._static = (colors, depths, normals, silhouettes)
 
         return self._static
 
     def _render_static(self):
-        colors, depths = self.static
+        colors, depths, normals, silhouettes = self.static
         colors = [self.renderer._add_noise(color) for color in colors]
-        return colors, depths
+        return colors, depths, normals, silhouettes
 
     def render(self):
         """
@@ -255,6 +255,8 @@ class Sensor:
 
         colors = []
         depths = []
+        normals = []
+        silhouettes = []
 
         for i in range(self.nb_cam):
             cam_name = "cam" + str(i)
@@ -265,24 +267,26 @@ class Sensor:
             if normal_forces:
                 position, orientation = self.cameras[cam_name].get_pose()
                 self.renderer.update_camera_pose(position, orientation)
-                color, depth = self.renderer.render(self.object_poses, normal_forces)
+                color, depth, normal, silhouette = self.renderer.render(self.object_poses, normal_forces)
 
                 # Remove the depth from curved gel
                 for j in range(len(depth)):
                     depth[j] = self.renderer.depth0[j] - depth[j]
             else:
-                color, depth = self._render_static()
+                color, depth, normal, silhouette = self._render_static()
 
             colors += color
             depths += depth
+            normals += normal
+            silhouettes += silhouette
 
-        return colors, depths
+        return colors, depths, normals, silhouettes
 
     def _depth_to_color(self, depth):
         gray = (np.clip(depth / self.zrange, 0, 1) * 255).astype(np.uint8)
         return cv2.cvtColor(gray, cv2.COLOR_GRAY2BGR)
 
-    def updateGUI(self, colors, depths):
+    def updateGUI(self, colors, depths, normals, silhouettes):
         """
         Update images for visualization
         """
@@ -302,5 +306,10 @@ class Sensor:
             cv2.imshow("color and depth", color_n_depth)
         else:
             cv2.imshow("color", color)
+        
+        normal = np.concatenate(normals, axis=1)
+        silhouette = np.concatenate(silhouettes, axis=1)
+        normal_n_silhouette = np.concatenate([normal, silhouette], axis=0)
+        cv2.imshow("normal and silhouette", normal_n_silhouette)
 
         cv2.waitKey(1)
