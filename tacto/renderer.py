@@ -44,29 +44,27 @@ def euler2matrix(angles=[0, 0, 0], translation=[0, 0, 0]):
     pose[:3, :3] = r
     return pose
 
-class NormalShaderCache():
-    def __init__(self):
+class ShaderCache():
+    def __init__(self, shader_name):
         self.program = None
+        self.name = shader_name
         self.pkg_dir = os.path.dirname(__file__)
 
     def get_program(self, vertex_shader, fragment_shader, geometry_shader=None, defines=None):
         if self.program is None:
             self.program=pyrender.shader_program.ShaderProgram(
-                "{0}/shaders/mesh_normals.vert".format(self.pkg_dir), 
-                "{0}/shaders/mesh_normals.frag".format(self.pkg_dir), defines=defines)
+                "{0}/shaders/{1}.vert".format(self.pkg_dir, self.name),
+                "{0}/shaders/{1}.frag".format(self.pkg_dir, self.name), defines=defines)
         return self.program
 
-class SilhouetteShaderCache():
+
+class NormalShaderCache(ShaderCache):
     def __init__(self):
-        self.program = None
-        self.pkg_dir = os.path.dirname(__file__)
+        super(NormalShaderCache, self).__init__("mesh_normals")
 
-    def get_program(self, vertex_shader, fragment_shader, geometry_shader=None, defines=None):
-        if self.program is None:
-            self.program=pyrender.shader_program.ShaderProgram(
-                "{0}/shaders/mesh_silhouette.vert".format(self.pkg_dir), 
-                "{0}/shaders/mesh_silhouette.frag".format(self.pkg_dir), defines=defines)
-        return self.program
+class SilhouetteShaderCache(ShaderCache):
+    def __init__(self):
+        super(SilhouetteShaderCache, self).__init__("mesh_silhouette")
 
 
 class Renderer:
@@ -80,6 +78,9 @@ class Renderer:
         """
         self._width = width
         self._height = height
+
+        self.normal_cache = NormalShaderCache()
+        self.silhouette_cache = SilhouetteShaderCache()
 
         if background is not None:
             self.set_background(background)
@@ -168,6 +169,7 @@ class Renderer:
         X0, Y0, Z0 = origin[0], origin[1], origin[2]
         W, H = g.width, g.height
 
+        g.mesh = None
         if g.mesh is not None:
             gel_trimesh = trimesh.load(g.mesh)
 
@@ -540,23 +542,23 @@ class Renderer:
 
             # render color, depth
             color, depth = self.r.render(self.scene)
-            color, depth = self._post_process(color, depth, i, noise, calibration)
+            # color, depth = self._post_process(color, depth, i, noise, calibration)
             colors.append(color)
             depths.append(depth)
 
             # render normals
-            self.r._renderer._program_cache = NormalShaderCache()
+            self.r._renderer._program_cache = self.normal_cache
             normal, _ = self.r.render(self.scene)
             # normal = normal / 255 * 2 - 1
-            self.r._renderer._program_cache = default_program_cache
             normals.append(normal)
 
             # render silhouettes
-            self.r._renderer._program_cache = SilhouetteShaderCache()
+            self.r._renderer._program_cache = self.silhouette_cache
             silhouette, _ = self.r.render(self.scene)
             # silhouette = silhouette / 255 * 2 - 1
-            self.r._renderer._program_cache = default_program_cache
             silhouettes.append(silhouette)
+
+            self.r._renderer._program_cache = default_program_cache
 
         return colors, depths, normals, silhouettes
 

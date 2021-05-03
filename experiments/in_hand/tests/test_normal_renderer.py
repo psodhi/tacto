@@ -38,7 +38,7 @@ camera = pyrender.PerspectiveCamera(yfov=np.pi / 3.0, aspectRatio=1.0, znear = 0
 scene.add(camera, pose=camera_pose)
 
 renderer = pyrender.OffscreenRenderer(512, 512)
-renderer._renderer._program_cache = CustomShaderCache()
+#renderer._renderer._program_cache = CustomShaderCache()
 
 normals, depth = renderer.render(scene)
 world_space_normals = normals / 255 * 2 - 1
