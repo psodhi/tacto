@@ -29,6 +29,7 @@ import pyrender
 import trimesh
 from omegaconf import OmegaConf
 from scipy.spatial.transform import Rotation as R
+from pyrender.constants import RenderFlags
 
 import pybullet as p
 
@@ -81,6 +82,7 @@ class Renderer:
 
         self.normal_cache = NormalShaderCache()
         self.silhouette_cache = SilhouetteShaderCache()
+        self.position_cache = ShaderCache("mesh_position")
 
         if background is not None:
             self.set_background(background)
@@ -547,8 +549,17 @@ class Renderer:
             depths.append(depth)
 
             # render normals
-            self.r._renderer._program_cache = self.normal_cache
-            normal, _ = self.r.render(self.scene)
+            self.r._renderer._program_cache = self.position_cache
+            seg_map = {}
+            for (obj_name, node) in self.object_nodes.items():
+                lower = np.array(node.mesh.bounds[0])
+                upper = np.array(node.mesh.bounds[1])
+                scale = 1 / (upper - lower)
+                bounds_mat = np.ndarray((3, 3))
+                bounds_mat[:, 0] = scale
+                bounds_mat[:, 1] = lower
+                seg_map[node] = bounds_mat * 255  #pyrender will later divide this value by 255
+            normal, _ = self.r.render(self.scene, RenderFlags.SEG, seg_map)
             # normal = normal / 255 * 2 - 1
             normals.append(normal)
 
