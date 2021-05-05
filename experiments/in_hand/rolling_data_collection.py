@@ -46,6 +46,105 @@ class WaypointSetter():
         ori = ori if ori is not None else self.robot.get_base_pose()[1]
 
         p.changeConstraint(self.cid, pos, ori, maxForce=self.max_force)
+class DataLogger:
+    def __init__(self, cfg):
+        self.cfg = cfg 
+        
+        self.dataset_dstdir = self.cfg.dataset.dstdir       
+        self.dataset_name = self.cfg.dataset.name
+
+        self.data_list = []
+        self.data_csvname = "poses_imgs"
+
+    def start_new_episode(self, obj, step_idx, eps_idx):
+        obj.reset()
+        step_idx = 0
+        eps_idx = eps_idx + 1
+
+        os.makedirs(f"{BASE_PATH}/{self.dataset_dstdir}/{self.dataset_name}/{eps_idx:04d}/top/color/", exist_ok=True)
+        os.makedirs(f"{BASE_PATH}/{self.dataset_dstdir}/{self.dataset_name}/{eps_idx:04d}/top/depth/", exist_ok=True)
+        os.makedirs(f"{BASE_PATH}/{self.dataset_dstdir}/{self.dataset_name}/{eps_idx:04d}/top/normal/", exist_ok=True)
+        os.makedirs(f"{BASE_PATH}/{self.dataset_dstdir}/{self.dataset_name}/{eps_idx:04d}/top/silhouette/", exist_ok=True)
+
+        os.makedirs(f"{BASE_PATH}/{self.dataset_dstdir}/{self.dataset_name}/{eps_idx:04d}/bot/color/", exist_ok=True)
+        os.makedirs(f"{BASE_PATH}/{self.dataset_dstdir}/{self.dataset_name}/{eps_idx:04d}/bot/depth/", exist_ok=True)
+        os.makedirs(f"{BASE_PATH}/{self.dataset_dstdir}/{self.dataset_name}/{eps_idx:04d}/bot/normal/", exist_ok=True)
+        os.makedirs(f"{BASE_PATH}/{self.dataset_dstdir}/{self.dataset_name}/{eps_idx:04d}/bot/silhouette/", exist_ok=True)
+
+        return obj, step_idx, eps_idx
+
+    def save_episode_step(self, eps_idx, step_idx, imgs_top, imgs_bot, obj, digit_top, digit_bottom):
+
+        # save digit top img frames
+        img_top_color_loc = f"{self.dataset_name}/{eps_idx:04d}/top/color/{step_idx:04d}.png"
+        img_top_depth_loc = f"{self.dataset_name}/{eps_idx:04d}/top/depth/{step_idx:04d}.png"
+        img_top_normal_loc = f"{self.dataset_name}/{eps_idx:04d}/top/normal/{step_idx:04d}.png"
+        img_top_silhouette_loc = f"{self.dataset_name}/{eps_idx:04d}/top/silhouette/{step_idx:04d}.png"
+
+        imageio.imwrite(f"{BASE_PATH}/{self.dataset_dstdir}/{img_top_color_loc}", imgs_top[0])
+        imageio.imwrite(f"{BASE_PATH}/{self.dataset_dstdir}/{img_top_depth_loc}", imgs_top[1])
+        imageio.imwrite(f"{BASE_PATH}/{self.dataset_dstdir}/{img_top_normal_loc}", imgs_top[2])
+        imageio.imwrite(f"{BASE_PATH}/{self.dataset_dstdir}/{img_top_silhouette_loc}", imgs_top[3])
+
+        # save digit bottom img frames
+        img_bot_color_loc = f"{self.dataset_name}/{eps_idx:04d}/bot/color/{step_idx:04d}.png"
+        img_bot_depth_loc = f"{self.dataset_name}/{eps_idx:04d}/bot/depth/{step_idx:04d}.png"
+        img_bot_normal_loc = f"{self.dataset_name}/{eps_idx:04d}/bot/normal/{step_idx:04d}.png"
+        img_bot_silhouette_loc = f"{self.dataset_name}/{eps_idx:04d}/bot/silhouette/{step_idx:04d}.png"
+
+        imageio.imwrite(f"{BASE_PATH}/{self.dataset_dstdir}/{img_bot_color_loc}", imgs_bot[0])
+        imageio.imwrite(f"{BASE_PATH}/{self.dataset_dstdir}/{img_bot_depth_loc}", imgs_bot[1])
+        imageio.imwrite(f"{BASE_PATH}/{self.dataset_dstdir}/{img_bot_normal_loc}", imgs_bot[2])
+        imageio.imwrite(f"{BASE_PATH}/{self.dataset_dstdir}/{img_bot_silhouette_loc}", imgs_bot[3])
+
+        # object, digit poses
+        obj_pos, obj_ori = obj.get_base_pose()[0], p.getEulerFromQuaternion(obj.get_base_pose()[1])
+        digit_top_pos, digit_top_ori = digit_top.get_base_pose()[0], p.getEulerFromQuaternion(digit_top.get_base_pose()[1])
+        digit_bot_pos, digit_bot_ori = digit_bottom.get_base_pose()[0], p.getEulerFromQuaternion(digit_bottom.get_base_pose()[1])
+
+        data_row = {'obj_pose': list(obj_pos) + list(obj_ori),
+            'digit_top_pose': list(digit_top_pos) + list(digit_top_ori),
+            'digit_bot_pose': list(digit_bot_pos) + list(digit_bot_ori),
+            'img_top_color_loc': img_top_color_loc,
+            'img_top_depth_loc': img_top_depth_loc,
+            'img_top_normal_loc': img_top_normal_loc,
+            'img_top_silhouette_loc': img_top_silhouette_loc,
+            'img_bot_color_loc': img_bot_color_loc,
+            'img_bot_depth_loc': img_bot_depth_loc,
+            'img_bot_normal_loc': img_bot_normal_loc,
+            'img_bot_silhouette_loc': img_bot_silhouette_loc}
+        
+        self.data_list.append(data_row)
+
+    def save_episode_dataset(self, eps_idx):
+        csvfile = f"{BASE_PATH}/{self.dataset_dstdir}/{self.dataset_name}/{eps_idx:04d}/{self.data_csvname}.csv"
+        log.info(f"Saving episode {eps_idx} to {csvfile}")
+
+        self.data_frame = pd.DataFrame(self.data_list)
+        self.data_frame.to_csv(csvfile)
+
+def get_wps_traj_back_forth(center_pos, end_pos, nsteps, noise_scale=0):
+    
+    pos_step = (end_pos - center_pos) / (nsteps / 4.0)
+
+    waypoints = []
+    waypoints.append(center_pos)
+    for step in range(0, nsteps):
+        step_frac = step / nsteps
+
+        noise = noise_scale * (np.random.rand() - 0.5)
+        pos_step = pos_step + noise
+
+        if (step_frac <= 0.25):
+            pos = waypoints[-1] + pos_step
+        elif (step_frac > 0.25) & (step_frac <= 0.75):
+            pos = waypoints[-1] - pos_step
+        else:
+            pos = waypoints[-1] + pos_step
+
+        waypoints.append(pos)
+
+    return waypoints
 
 def set_gui_params(cam_params=None):
 
@@ -63,111 +162,8 @@ def set_gui_params(cam_params=None):
         cam_dist = cam_params['cam_dist']
         cam_yaw = cam_params['cam_yaw']
         cam_pitch = cam_params['cam_pitch']
-        p.resetDebugVisualizerCamera(
-            cam_dist, cam_yaw, cam_pitch, cam_tgt_pos)
-
-
-def save_dataset_frame(cfg, eps_idx, step_idx, imgs_top, imgs_bot, obj, digit_top, digit_bottom):
-
-    # save digit top img frames
-    # img_top_color_loc = f"{cfg.dataset.dstdir}/{cfg.dataset.type}/{eps_idx:04d}/top/color/{step_idx:04d}.png"
-    img_top_color_loc = f"{cfg.dataset.type}/{eps_idx:04d}/top/color/{step_idx:04d}.png"
-    img_top_depth_loc = f"{cfg.dataset.type}/{eps_idx:04d}/top/depth/{step_idx:04d}.png"
-    img_top_normal_loc = f"{cfg.dataset.type}/{eps_idx:04d}/top/normal/{step_idx:04d}.png"
-    img_top_silhouette_loc = f"{cfg.dataset.type}/{eps_idx:04d}/top/silhouette/{step_idx:04d}.png"
-
-    # .astype(np.uint8)
-    # imgs_top[2] = (255. * (imgs_top[2] + 1) / 2)
-    # img_as_ubyte
-
-    imageio.imwrite(f"{BASE_PATH}/{cfg.dataset.dstdir}/{img_top_color_loc}", imgs_top[0])
-    imageio.imwrite(f"{BASE_PATH}/{cfg.dataset.dstdir}/{img_top_depth_loc}", imgs_top[1])
-    imageio.imwrite(f"{BASE_PATH}/{cfg.dataset.dstdir}/{img_top_normal_loc}", imgs_top[2])
-    imageio.imwrite(f"{BASE_PATH}/{cfg.dataset.dstdir}/{img_top_silhouette_loc}", imgs_top[3])
-
-    # save digit bottom img frames
-    img_bot_color_loc = f"{cfg.dataset.type}/{eps_idx:04d}/bot/color/{step_idx:04d}.png"
-    img_bot_depth_loc = f"{cfg.dataset.type}/{eps_idx:04d}/bot/depth/{step_idx:04d}.png"
-    img_bot_normal_loc = f"{cfg.dataset.type}/{eps_idx:04d}/bot/normal/{step_idx:04d}.png"
-    img_bot_silhouette_loc = f"{cfg.dataset.type}/{eps_idx:04d}/bot/silhouette/{step_idx:04d}.png"
-
-    imageio.imwrite(f"{BASE_PATH}/{cfg.dataset.dstdir}/{img_bot_color_loc}", imgs_bot[0])
-    imageio.imwrite(f"{BASE_PATH}/{cfg.dataset.dstdir}/{img_bot_depth_loc}", imgs_bot[1])
-    imageio.imwrite(f"{BASE_PATH}/{cfg.dataset.dstdir}/{img_bot_normal_loc}", imgs_bot[2])
-    imageio.imwrite(f"{BASE_PATH}/{cfg.dataset.dstdir}/{img_bot_silhouette_loc}", imgs_bot[3])
-    
-    # object, digit poses
-    obj_pos, obj_ori = obj.get_base_pose()[0], p.getEulerFromQuaternion(obj.get_base_pose()[1])
-    digit_top_pos, digit_top_ori = digit_top.get_base_pose()[0], p.getEulerFromQuaternion(digit_top.get_base_pose()[1])
-    digit_bot_pos, digit_bot_ori = digit_bottom.get_base_pose()[0], p.getEulerFromQuaternion(digit_bottom.get_base_pose()[1])
-
-    data_row = {'obj_pose': [np.hstack((np.array(obj_pos), np.array(obj_ori)))],
-            'digit_top_pose': [np.hstack((np.array(digit_top_pos), np.array(digit_top_ori)))],
-            'digit_bot_pose': [np.hstack((np.array(digit_bot_pos), np.array(digit_bot_ori)))],
-            'img_top_color_loc': img_top_color_loc,
-            'img_top_depth_loc': img_top_depth_loc,
-            'img_top_normal_loc': img_top_normal_loc,
-            'img_top_silhouette_loc': img_top_silhouette_loc,
-            'img_bot_color_loc': img_bot_color_loc,
-            'img_bot_depth_loc': img_bot_depth_loc,
-            'img_bot_normal_loc': img_bot_normal_loc,
-            'img_bot_silhouette_loc': img_bot_silhouette_loc}
-
-    csvfile = f"{BASE_PATH}/{cfg.dataset.dstdir}/{cfg.dataset.type}/{eps_idx:04d}/poses_imgs.csv"
-    header_flag = False if os.path.exists(csvfile) else True
-    df = pd.DataFrame(data=data_row)
-    df.to_csv(csvfile, mode='a', header=header_flag)
-
-    # header_flag = False if os.path.exists(csvfile) else True
-    # with open(csvfile, 'a') as csvfile:
-    #   writer = csv.writer(csvfile)
-    #   if (header_flag):
-    #     writer.writerow(fields)
-    #   writer.writerow(data)
-
-def compute_wps_traj(cfg):
-
-    center_pos = np.asarray(cfg.digits.top.base_position)
-    end_pos = np.asarray(cfg.waypoints.end_pos)
-
-    nsteps = cfg.waypoints.nsteps
-    pos_step = (end_pos - center_pos) / (nsteps / 4.0)
-
-    waypoints = []
-    waypoints.append(center_pos)
-    for step in range(0, nsteps):
-        step_frac = step / nsteps
-
-        noise = 0e-6 * (np.random.rand() - 0.5)
-        pos_step = pos_step + noise
-
-        if (step_frac <= 0.25):
-            pos = waypoints[-1] + pos_step
-        elif (step_frac > 0.25) & (step_frac <= 0.75):
-            pos = waypoints[-1] - pos_step
-        else:
-            pos = waypoints[-1] + pos_step
-
-        waypoints.append(pos)
-
-    return waypoints
-
-def reset_episode(cfg, obj, step_idx, eps_idx):
-    obj.reset()
-    step_idx = 0
-    eps_idx = eps_idx + 1
-
-    os.makedirs(f"{BASE_PATH}/{cfg.dataset.dstdir}/{cfg.dataset.type}/{eps_idx:04d}/top/color/", exist_ok=True)
-    os.makedirs(f"{BASE_PATH}/{cfg.dataset.dstdir}/{cfg.dataset.type}/{eps_idx:04d}/top/depth/", exist_ok=True)
-    os.makedirs(f"{BASE_PATH}/{cfg.dataset.dstdir}/{cfg.dataset.type}/{eps_idx:04d}/top/normal/", exist_ok=True)
-    os.makedirs(f"{BASE_PATH}/{cfg.dataset.dstdir}/{cfg.dataset.type}/{eps_idx:04d}/top/silhouette/", exist_ok=True)
-
-    os.makedirs(f"{BASE_PATH}/{cfg.dataset.dstdir}/{cfg.dataset.type}/{eps_idx:04d}/bot/color/", exist_ok=True)
-    os.makedirs(f"{BASE_PATH}/{cfg.dataset.dstdir}/{cfg.dataset.type}/{eps_idx:04d}/bot/depth/", exist_ok=True)
-    os.makedirs(f"{BASE_PATH}/{cfg.dataset.dstdir}/{cfg.dataset.type}/{eps_idx:04d}/bot/normal/", exist_ok=True)
-    os.makedirs(f"{BASE_PATH}/{cfg.dataset.dstdir}/{cfg.dataset.type}/{eps_idx:04d}/bot/silhouette/", exist_ok=True)
-
-    return obj, step_idx, eps_idx
+        p.resetDebugVisualizerCamera(cam_dist, cam_yaw, cam_pitch, cam_tgt_pos)
+        
 
 @hydra.main(config_path="conf/", config_name="rolling_data_collection")
 def main(cfg):
@@ -199,7 +195,11 @@ def main(cfg):
 
     # Get waypoints
     wps_setter = WaypointSetter(digit_top)
-    wps = compute_wps_traj(cfg)
+    wps = get_wps_traj_back_forth(center_pos=np.asarray(cfg.digits.top.base_position),
+                              end_pos=np.asarray(cfg.waypoints.end_pos), nsteps=cfg.waypoints.nsteps)
+
+    # Init data logger object
+    data_logger = DataLogger(cfg)
 
     # Start p.stepSimulation in another thread
     set_gui_params()
@@ -208,16 +208,16 @@ def main(cfg):
 
     # Run simulation
     step_idx, eps_idx = -1, -1
-    obj, step_idx, eps_idx = reset_episode(cfg, obj, step_idx, eps_idx)
+    obj, step_idx, eps_idx = data_logger.start_new_episode(obj, step_idx, eps_idx)
     nsteps = cfg.waypoints.nsteps
     contact_flag, no_contact_count = 1, 0
-    pause = False
 
     while True:
         # reset new episode
         reset_flag = (obj.get_base_pose()[0][2] <= 0.01) | (step_idx == nsteps) | (contact_flag & (no_contact_count > 10))
         if reset_flag:
-            obj, step_idx, eps_idx = reset_episode(cfg, obj, step_idx, eps_idx)
+            data_logger.save_episode_dataset(eps_idx)
+            obj, step_idx, eps_idx = data_logger.start_new_episode(obj, step_idx, eps_idx)
             no_contact_count = 0
 
             logging.info(f'Starting new episode {eps_idx:04d}.')
@@ -236,18 +236,65 @@ def main(cfg):
         if contact_flag:
             tid = p.addUserDebugText(f"episode_{eps_idx:04d}", textPosition=[
                                      0.02, 0, 0.1], textColorRGB=[1, 0, 0], textSize=2, lifeTime=1e-1)
-            save_dataset_frame(cfg, eps_idx, step_idx, imgs_top, imgs_bot, obj, digit_top, digit_bottom)
+            data_logger.save_episode_step(eps_idx, step_idx, imgs_top, imgs_bot, obj, digit_top, digit_bottom)
 
         # check for lost contact
         no_contact_count = no_contact_count + 1 if (contact_flag == 0) else 0
 
         step_idx = step_idx + 1
-
-        if pause:
-            input("Press Enter to continue...")
-            pause = False
+        
+        if (eps_idx > cfg.dataset.max_episodes):
+            break
 
     t.stop()
 
 if __name__ == "__main__":
     main()
+
+
+# def save_dataset_frame(cfg, eps_idx, step_idx, imgs_top, imgs_bot, obj, digit_top, digit_bottom):
+
+#     # save digit top img frames
+#     img_top_color_loc = f"{cfg.dataset.type}/{eps_idx:04d}/top/color/{step_idx:04d}.png"
+#     img_top_depth_loc = f"{cfg.dataset.type}/{eps_idx:04d}/top/depth/{step_idx:04d}.png"
+#     img_top_normal_loc = f"{cfg.dataset.type}/{eps_idx:04d}/top/normal/{step_idx:04d}.png"
+#     img_top_silhouette_loc = f"{cfg.dataset.type}/{eps_idx:04d}/top/silhouette/{step_idx:04d}.png"
+
+#     imageio.imwrite(f"{BASE_PATH}/{cfg.dataset.dstdir}/{img_top_color_loc}", imgs_top[0])
+#     imageio.imwrite(f"{BASE_PATH}/{cfg.dataset.dstdir}/{img_top_depth_loc}", imgs_top[1])
+#     imageio.imwrite(f"{BASE_PATH}/{cfg.dataset.dstdir}/{img_top_normal_loc}", imgs_top[2])
+#     imageio.imwrite(f"{BASE_PATH}/{cfg.dataset.dstdir}/{img_top_silhouette_loc}", imgs_top[3])
+
+#     # save digit bottom img frames
+#     img_bot_color_loc = f"{cfg.dataset.type}/{eps_idx:04d}/bot/color/{step_idx:04d}.png"
+#     img_bot_depth_loc = f"{cfg.dataset.type}/{eps_idx:04d}/bot/depth/{step_idx:04d}.png"
+#     img_bot_normal_loc = f"{cfg.dataset.type}/{eps_idx:04d}/bot/normal/{step_idx:04d}.png"
+#     img_bot_silhouette_loc = f"{cfg.dataset.type}/{eps_idx:04d}/bot/silhouette/{step_idx:04d}.png"
+
+#     imageio.imwrite(f"{BASE_PATH}/{cfg.dataset.dstdir}/{img_bot_color_loc}", imgs_bot[0])
+#     imageio.imwrite(f"{BASE_PATH}/{cfg.dataset.dstdir}/{img_bot_depth_loc}", imgs_bot[1])
+#     imageio.imwrite(f"{BASE_PATH}/{cfg.dataset.dstdir}/{img_bot_normal_loc}", imgs_bot[2])
+#     imageio.imwrite(f"{BASE_PATH}/{cfg.dataset.dstdir}/{img_bot_silhouette_loc}", imgs_bot[3])
+    
+#     # object, digit poses
+#     obj_pos, obj_ori = obj.get_base_pose()[0], p.getEulerFromQuaternion(obj.get_base_pose()[1])
+#     digit_top_pos, digit_top_ori = digit_top.get_base_pose()[0], p.getEulerFromQuaternion(digit_top.get_base_pose()[1])
+#     digit_bot_pos, digit_bot_ori = digit_bottom.get_base_pose()[0], p.getEulerFromQuaternion(digit_bottom.get_base_pose()[1])
+
+#     data_row = {'obj_pose': [np.hstack((np.array(obj_pos), np.array(obj_ori)))],
+#             'digit_top_pose': [np.hstack((np.array(digit_top_pos), np.array(digit_top_ori)))],
+#             'digit_bot_pose': [np.hstack((np.array(digit_bot_pos), np.array(digit_bot_ori)))],
+#             'img_top_color_loc': img_top_color_loc,
+#             'img_top_depth_loc': img_top_depth_loc,
+#             'img_top_normal_loc': img_top_normal_loc,
+#             'img_top_silhouette_loc': img_top_silhouette_loc,
+#             'img_bot_color_loc': img_bot_color_loc,
+#             'img_bot_depth_loc': img_bot_depth_loc,
+#             'img_bot_normal_loc': img_bot_normal_loc,
+#             'img_bot_silhouette_loc': img_bot_silhouette_loc}
+
+#     csvfile = f"{BASE_PATH}/{cfg.dataset.dstdir}/{cfg.dataset.type}/{eps_idx:04d}/poses_imgs.csv"
+#     header_flag = False if os.path.exists(csvfile) else True
+#     df = pd.DataFrame(data=data_row)
+#     df.to_csv(csvfile, mode='a', header=header_flag)
+

@@ -53,5 +53,6 @@ waypoints:
   # end_pos: [0.016, 0.00, 0.075]
 
 dataset:
+  max_episodes: 5
   dstdir: local/datasets/
-  type: tacto_rolling_die_0.25/test
+  name: tacto_rolling_die_0.25/train
