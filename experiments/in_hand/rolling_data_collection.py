@@ -98,13 +98,16 @@ class DataLogger:
         imageio.imwrite(f"{BASE_PATH}/{self.dataset_dstdir}/{img_bot_silhouette_loc}", imgs_bot[3])
 
         # object, digit poses
-        obj_pos, obj_ori = obj.get_base_pose()[0], p.getEulerFromQuaternion(obj.get_base_pose()[1])
-        digit_top_pos, digit_top_ori = digit_top.get_base_pose()[0], p.getEulerFromQuaternion(digit_top.get_base_pose()[1])
-        digit_bot_pos, digit_bot_ori = digit_bottom.get_base_pose()[0], p.getEulerFromQuaternion(digit_bottom.get_base_pose()[1])
-
-        data_row = {'obj_pose': list(obj_pos) + list(obj_ori),
-            'digit_top_pose': list(digit_top_pos) + list(digit_top_ori),
-            'digit_bot_pose': list(digit_bot_pos) + list(digit_bot_ori),
+        obj_pos, obj_ori = obj.get_base_pose()[0], p.getMatrixFromQuaternion(obj.get_base_pose()[1])
+        digit_top_pos, digit_top_ori = digit_top.get_base_pose()[0], p.getMatrixFromQuaternion(digit_top.get_base_pose()[1])
+        digit_bot_pos, digit_bot_ori = digit_bottom.get_base_pose()[0], p.getMatrixFromQuaternion(digit_bottom.get_base_pose()[1])
+        
+        data_row = {'obj_pos': list(obj_pos),
+            'obj_ori': list(obj_ori),
+            'digit_top_pos': list(digit_top_pos),
+            'digit_top_ori': list(digit_top_ori),
+            'digit_bot_pos': list(digit_bot_pos),
+            'digit_bot_ori': list(digit_bot_ori),
             'img_top_color_loc': img_top_color_loc,
             'img_top_depth_loc': img_top_depth_loc,
             'img_top_normal_loc': img_top_normal_loc,
@@ -113,7 +116,7 @@ class DataLogger:
             'img_bot_depth_loc': img_bot_depth_loc,
             'img_bot_normal_loc': img_bot_normal_loc,
             'img_bot_silhouette_loc': img_bot_silhouette_loc}
-        
+
         self.data_list.append(data_row)
 
     def save_episode_dataset(self, eps_idx):
@@ -250,51 +253,3 @@ def main(cfg):
 
 if __name__ == "__main__":
     main()
-
-
-# def save_dataset_frame(cfg, eps_idx, step_idx, imgs_top, imgs_bot, obj, digit_top, digit_bottom):
-
-#     # save digit top img frames
-#     img_top_color_loc = f"{cfg.dataset.type}/{eps_idx:04d}/top/color/{step_idx:04d}.png"
-#     img_top_depth_loc = f"{cfg.dataset.type}/{eps_idx:04d}/top/depth/{step_idx:04d}.png"
-#     img_top_normal_loc = f"{cfg.dataset.type}/{eps_idx:04d}/top/normal/{step_idx:04d}.png"
-#     img_top_silhouette_loc = f"{cfg.dataset.type}/{eps_idx:04d}/top/silhouette/{step_idx:04d}.png"
-
-#     imageio.imwrite(f"{BASE_PATH}/{cfg.dataset.dstdir}/{img_top_color_loc}", imgs_top[0])
-#     imageio.imwrite(f"{BASE_PATH}/{cfg.dataset.dstdir}/{img_top_depth_loc}", imgs_top[1])
-#     imageio.imwrite(f"{BASE_PATH}/{cfg.dataset.dstdir}/{img_top_normal_loc}", imgs_top[2])
-#     imageio.imwrite(f"{BASE_PATH}/{cfg.dataset.dstdir}/{img_top_silhouette_loc}", imgs_top[3])
-
-#     # save digit bottom img frames
-#     img_bot_color_loc = f"{cfg.dataset.type}/{eps_idx:04d}/bot/color/{step_idx:04d}.png"
-#     img_bot_depth_loc = f"{cfg.dataset.type}/{eps_idx:04d}/bot/depth/{step_idx:04d}.png"
-#     img_bot_normal_loc = f"{cfg.dataset.type}/{eps_idx:04d}/bot/normal/{step_idx:04d}.png"
-#     img_bot_silhouette_loc = f"{cfg.dataset.type}/{eps_idx:04d}/bot/silhouette/{step_idx:04d}.png"
-
-#     imageio.imwrite(f"{BASE_PATH}/{cfg.dataset.dstdir}/{img_bot_color_loc}", imgs_bot[0])
-#     imageio.imwrite(f"{BASE_PATH}/{cfg.dataset.dstdir}/{img_bot_depth_loc}", imgs_bot[1])
-#     imageio.imwrite(f"{BASE_PATH}/{cfg.dataset.dstdir}/{img_bot_normal_loc}", imgs_bot[2])
-#     imageio.imwrite(f"{BASE_PATH}/{cfg.dataset.dstdir}/{img_bot_silhouette_loc}", imgs_bot[3])
-    
-#     # object, digit poses
-#     obj_pos, obj_ori = obj.get_base_pose()[0], p.getEulerFromQuaternion(obj.get_base_pose()[1])
-#     digit_top_pos, digit_top_ori = digit_top.get_base_pose()[0], p.getEulerFromQuaternion(digit_top.get_base_pose()[1])
-#     digit_bot_pos, digit_bot_ori = digit_bottom.get_base_pose()[0], p.getEulerFromQuaternion(digit_bottom.get_base_pose()[1])
-
-#     data_row = {'obj_pose': [np.hstack((np.array(obj_pos), np.array(obj_ori)))],
-#             'digit_top_pose': [np.hstack((np.array(digit_top_pos), np.array(digit_top_ori)))],
-#             'digit_bot_pose': [np.hstack((np.array(digit_bot_pos), np.array(digit_bot_ori)))],
-#             'img_top_color_loc': img_top_color_loc,
-#             'img_top_depth_loc': img_top_depth_loc,
-#             'img_top_normal_loc': img_top_normal_loc,
-#             'img_top_silhouette_loc': img_top_silhouette_loc,
-#             'img_bot_color_loc': img_bot_color_loc,
-#             'img_bot_depth_loc': img_bot_depth_loc,
-#             'img_bot_normal_loc': img_bot_normal_loc,
-#             'img_bot_silhouette_loc': img_bot_silhouette_loc}
-
-#     csvfile = f"{BASE_PATH}/{cfg.dataset.dstdir}/{cfg.dataset.type}/{eps_idx:04d}/poses_imgs.csv"
-#     header_flag = False if os.path.exists(csvfile) else True
-#     df = pd.DataFrame(data=data_row)
-#     df.to_csv(csvfile, mode='a', header=header_flag)
-
