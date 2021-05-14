@@ -15,6 +15,7 @@ sensor:
       yfov: 60 # Vertical field of view in degrees
       znear: 0.001 # Distance to the near clipping plane, in meters
       lightIDList: [0, 1, 2] # Select light ID list for rendering (OpenGL has max limit of 8 lights)
+      zfar: 0.05
   
   gel:
     origin: [0.022, 0, 0.015] # Center coordinate of the gel, in meters

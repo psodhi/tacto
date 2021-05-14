@@ -276,7 +276,7 @@ class Renderer:
             cami = conf_cam[i]
 
             camera = pyrender.PerspectiveCamera(
-                yfov=np.deg2rad(cami.yfov), znear=cami.znear,
+                yfov=np.deg2rad(cami.yfov), znear=cami.znear, zfar=cami.zfar
             )
             camera_zero_pose = euler2matrix(
                 angles=np.deg2rad(cami.orientation), translation=cami.position,
@@ -547,8 +547,8 @@ class Renderer:
             # color, depth = self._post_process(color, depth, i, noise, calibration)
             colors.append(color)
             depths.append(depth)
-
-            # render normals
+            
+            # render obj positions
             self.r._renderer._program_cache = self.position_cache
             seg_map = {}
             for (obj_name, node) in self.object_nodes.items():
@@ -560,13 +560,16 @@ class Renderer:
                 bounds_mat[:, 1] = lower
                 seg_map[node] = bounds_mat * 255  #pyrender will later divide this value by 255
             normal, _ = self.r.render(self.scene, RenderFlags.SEG, seg_map)
-            # normal = normal / 255 * 2 - 1
             normals.append(normal)
+
+            # render normals
+            # self.r._renderer._program_cache = self.normal_cache
+            # normal, _ = self.r.render(self.scene)
+            # normals.append(normal)
 
             # render silhouettes
             self.r._renderer._program_cache = self.silhouette_cache
             silhouette, _ = self.r.render(self.scene)
-            # silhouette = silhouette / 255 * 2 - 1
             silhouettes.append(silhouette)
 
             self.r._renderer._program_cache = default_program_cache

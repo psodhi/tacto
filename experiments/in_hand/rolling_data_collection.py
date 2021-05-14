@@ -77,7 +77,7 @@ class DataLogger:
 
         # save digit top img frames
         img_top_color_loc = f"{self.dataset_name}/{eps_idx:04d}/top/color/{step_idx:04d}.png"
-        img_top_depth_loc = f"{self.dataset_name}/{eps_idx:04d}/top/depth/{step_idx:04d}.png"
+        img_top_depth_loc = f"{self.dataset_name}/{eps_idx:04d}/top/depth/{step_idx:04d}.tiff" # .exr
         img_top_normal_loc = f"{self.dataset_name}/{eps_idx:04d}/top/normal/{step_idx:04d}.png"
         img_top_silhouette_loc = f"{self.dataset_name}/{eps_idx:04d}/top/silhouette/{step_idx:04d}.png"
 
@@ -88,7 +88,7 @@ class DataLogger:
 
         # save digit bottom img frames
         img_bot_color_loc = f"{self.dataset_name}/{eps_idx:04d}/bot/color/{step_idx:04d}.png"
-        img_bot_depth_loc = f"{self.dataset_name}/{eps_idx:04d}/bot/depth/{step_idx:04d}.png"
+        img_bot_depth_loc = f"{self.dataset_name}/{eps_idx:04d}/bot/depth/{step_idx:04d}.tiff"
         img_bot_normal_loc = f"{self.dataset_name}/{eps_idx:04d}/bot/normal/{step_idx:04d}.png"
         img_bot_silhouette_loc = f"{self.dataset_name}/{eps_idx:04d}/bot/silhouette/{step_idx:04d}.png"
 
