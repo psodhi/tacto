@@ -268,10 +268,10 @@ class Sensor:
                 position, orientation = self.cameras[cam_name].get_pose()
                 self.renderer.update_camera_pose(position, orientation)
                 color, depth, normal, silhouette = self.renderer.render(self.object_poses, normal_forces)
-
+                                                
                 # Remove the depth from curved gel
-                for j in range(len(depth)):
-                    depth[j] = self.renderer.depth0[j] - depth[j]
+                # for j in range(len(depth)):
+                #     depth[j] = self.renderer.depth0[j] - depth[j]
             else:
                 color, depth, normal, silhouette = self._render_static()
 

@@ -10,8 +10,7 @@ tacto:
 digits:
   top:
     urdf_path: "../../meshes/digit.urdf"
-    base_position: [0, 0, 0.065]
-    # base_position: [0, 0, 0.075]
+    base_position: [0, 0.1, 0.065]
 
     # quaternion from p.getQuaternionFromEuler([0, pi/2, pi])
     base_orientation: [-0.707107, 0.0, 0.707107, 0.0]
@@ -28,9 +27,10 @@ digits:
 
 object:
   urdf_path: "objects/cube_small.urdf"
-  base_position: [-0.015, 0, 0.035]
+  base_position: [-0.015, 0, 0.037]
+  # base_position: [-0.015, 0, 0.035]
   # base_orientation: [0.0, -0.3826834323650898, 0.0, 0.9238795325112867]
-  global_scaling: 0.25 # 0.25
+  global_scaling: 0.25
 
 object_control_panel:
   slider_params:
@@ -48,9 +48,9 @@ renderer:
   silhouette: True
 
 waypoints:
-  nsteps: 100
-  end_pos: [0.016, 0.001, 0.065]
-  # end_pos: [0.016, 0.00, 0.075]
+  nsteps: 600
+  end_pos: [0.00001, 0.0, 0.037]
+  # end_pos: [0.016, 0, 0.065]
 
 dataset:
   max_episodes: 5

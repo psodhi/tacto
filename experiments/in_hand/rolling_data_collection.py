@@ -7,7 +7,7 @@ import pandas as pd
 
 import imageio
 import cv2
-from skimage import img_as_ubyte
+from attrdict import AttrDict
 
 import cv2
 import hydra
@@ -21,7 +21,7 @@ log = logging.getLogger(__name__)
 BASE_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
 
 class WaypointSetter():
-    def __init__(self, robot, max_force=100, slider_params={}):
+    def __init__(self, robot, max_force=150, slider_params={}):
         super().__init__()
         self.robot = robot
         self.max_force = max_force
@@ -72,8 +72,22 @@ class DataLogger:
         os.makedirs(f"{BASE_PATH}/{self.dataset_dstdir}/{self.dataset_name}/{eps_idx:04d}/bot/silhouette/", exist_ok=True)
 
         return obj, step_idx, eps_idx
+    
+    def get_pose_from_renderer(self, renderer):
 
-    def save_episode_step(self, eps_idx, step_idx, imgs_top, imgs_bot, obj, digit_top, digit_bottom):
+        obj_pose = None
+
+        obj_names = list(renderer.object_nodes.keys())
+        for obj_name in obj_names:
+            node = renderer.object_nodes[obj_name]
+            obj_pose = renderer.scene.get_pose(node)
+        
+        obj_pos = list(obj_pose[0:3, -1].reshape(-1))
+        obj_ori = list(obj_pose[0:3, 0:3].reshape(-1))
+        
+        return obj_pos, obj_ori
+
+    def save_episode_step(self, eps_idx, step_idx, imgs_top, imgs_bot, obj, digit_top, digit_bottom, renderer=None):
 
         # save digit top img frames
         img_top_color_loc = f"{self.dataset_name}/{eps_idx:04d}/top/color/{step_idx:04d}.png"
@@ -98,7 +112,8 @@ class DataLogger:
         imageio.imwrite(f"{BASE_PATH}/{self.dataset_dstdir}/{img_bot_silhouette_loc}", imgs_bot[3])
 
         # object, digit poses
-        obj_pos, obj_ori = obj.get_base_pose()[0], p.getMatrixFromQuaternion(obj.get_base_pose()[1])
+        # obj_pos, obj_ori = obj.get_base_pose()[0], p.getMatrixFromQuaternion(obj.get_base_pose()[1])        
+        obj_pos, obj_ori = self.get_pose_from_renderer(renderer)
         digit_top_pos, digit_top_ori = digit_top.get_base_pose()[0], p.getMatrixFromQuaternion(digit_top.get_base_pose()[1])
         digit_bot_pos, digit_bot_ori = digit_bottom.get_base_pose()[0], p.getMatrixFromQuaternion(digit_bottom.get_base_pose()[1])
         
@@ -197,8 +212,12 @@ def main(cfg):
     digits.add_body(obj)
 
     # Get waypoints
-    wps_setter = WaypointSetter(digit_top)
-    wps = get_wps_traj_back_forth(center_pos=np.asarray(cfg.digits.top.base_position),
+    # wps_setter = WaypointSetter(digit_top)
+    # wps = get_wps_traj_back_forth(center_pos=np.asarray(cfg.digits.top.base_position),
+    #                           end_pos=np.asarray(cfg.waypoints.end_pos), nsteps=cfg.waypoints.nsteps)
+                              
+    wps_setter = WaypointSetter(obj)
+    wps = get_wps_traj_back_forth(center_pos=np.asarray(cfg.object.base_position),
                               end_pos=np.asarray(cfg.waypoints.end_pos), nsteps=cfg.waypoints.nsteps)
 
     # Init data logger object
@@ -233,13 +252,14 @@ def main(cfg):
         digits.updateGUI(color, depth, normal, silhouette)
 
         # save contact frame
-        contact_flag = (np.linalg.norm(depth[0]) > 0.025)
+        contact_depth_thresh = 0.025
+        contact_flag = (np.linalg.norm(depth[0]) > contact_depth_thresh) | (np.linalg.norm(depth[1]) > contact_depth_thresh)
         imgs_top = (color[0], depth[0], normal[0], silhouette[0])
         imgs_bot = (color[1], depth[1], normal[1], silhouette[1])
         if contact_flag:
             tid = p.addUserDebugText(f"episode_{eps_idx:04d}", textPosition=[
                                      0.02, 0, 0.1], textColorRGB=[1, 0, 0], textSize=2, lifeTime=1e-1)
-            data_logger.save_episode_step(eps_idx, step_idx, imgs_top, imgs_bot, obj, digit_top, digit_bottom)
+            data_logger.save_episode_step(eps_idx, step_idx, imgs_top, imgs_bot, obj, digit_top, digit_bottom, renderer=digits.renderer)
 
         # check for lost contact
         no_contact_count = no_contact_count + 1 if (contact_flag == 0) else 0
