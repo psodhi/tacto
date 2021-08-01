@@ -21,7 +21,7 @@ log = logging.getLogger(__name__)
 BASE_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
 
 class WaypointSetter():
-    def __init__(self, robot, max_force=150, slider_params={}):
+    def __init__(self, robot, max_force=100, slider_params={}):
         super().__init__()
         self.robot = robot
         self.max_force = max_force
@@ -136,10 +136,12 @@ class DataLogger:
 
     def save_episode_dataset(self, eps_idx):
         csvfile = f"{BASE_PATH}/{self.dataset_dstdir}/{self.dataset_name}/{eps_idx:04d}/{self.data_csvname}.csv"
-        log.info(f"Saving episode {eps_idx} to {csvfile}")
 
         self.data_frame = pd.DataFrame(self.data_list)
         self.data_frame.to_csv(csvfile)
+
+        log.info(f"Saving episode {eps_idx} to {csvfile}")
+        self.data_list = []
 
 def get_wps_traj_back_forth(center_pos, end_pos, nsteps, noise_scale=0):
     

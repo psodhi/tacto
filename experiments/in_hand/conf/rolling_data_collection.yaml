@@ -10,7 +10,7 @@ tacto:
 digits:
   top:
     urdf_path: "../../meshes/digit.urdf"
-    base_position: [0, 0.1, 0.065]
+    base_position: [0, 0.1, 0.063]
 
     # quaternion from p.getQuaternionFromEuler([0, pi/2, pi])
     base_orientation: [-0.707107, 0.0, 0.707107, 0.0]
@@ -27,10 +27,20 @@ digits:
 
 object:
   urdf_path: "objects/cube_small.urdf"
-  base_position: [-0.015, 0, 0.037]
-  # base_position: [-0.015, 0, 0.035]
-  # base_orientation: [0.0, -0.3826834323650898, 0.0, 0.9238795325112867]
-  global_scaling: 0.25
+
+  ## resting on face
+  # base_position: [-0.015, 0, 0.033]
+  # base_orientation: [0.0, 0.0, 0.0, 1.0]
+
+  ## resting on edge
+  base_position: [-0.015, 0, 0.033]
+  base_orientation: [0.0, -0.3826834323650898, 0.0, 0.9238795325112867]
+
+  ## resting on corner
+  # base_position: [-0.015, -0.001, 0.033]
+  # base_orientation: [0.3535533905932738, 0.3535533905932738, -0.14644660940672624, 0.8535533905932737]
+
+  global_scaling: 0.15
 
 object_control_panel:
   slider_params:
@@ -48,11 +58,13 @@ renderer:
   silhouette: True
 
 waypoints:
-  nsteps: 600
-  end_pos: [0.00001, 0.0, 0.037]
-  # end_pos: [0.016, 0, 0.065]
+  nsteps: 300
+
+  # end_pos: [-0.01, 0, 0.033] 
+  end_pos: [-0.0135, 0, 0.033]
+  # end_pos: [0.7854, 0.4, 0.]
 
 dataset:
-  max_episodes: 5
+  max_episodes: 100
   dstdir: local/datasets/
-  name: tacto_rolling_die_0.25/train
+  name: tacto_rolling_die/dataset_0000/train
