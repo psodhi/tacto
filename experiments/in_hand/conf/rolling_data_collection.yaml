@@ -33,12 +33,12 @@ object:
   # base_orientation: [0.0, 0.0, 0.0, 1.0]
 
   ## resting on edge
-  base_position: [-0.015, 0, 0.033]
-  base_orientation: [0.0, -0.3826834323650898, 0.0, 0.9238795325112867]
+  # base_position: [-0.015, 0, 0.033]
+  # base_orientation: [0.0, -0.3826834323650898, 0.0, 0.9238795325112867]
 
   ## resting on corner
-  # base_position: [-0.015, -0.001, 0.033]
-  # base_orientation: [0.3535533905932738, 0.3535533905932738, -0.14644660940672624, 0.8535533905932737]
+  base_position: [-0.015, -0.001, 0.033]
+  base_orientation: [0.3535533905932738, 0.3535533905932738, -0.14644660940672624, 0.8535533905932737]
 
   global_scaling: 0.15
 
@@ -58,13 +58,18 @@ renderer:
   silhouette: True
 
 waypoints:
-  nsteps: 300
+  nsteps: 400
 
-  # end_pos: [-0.01, 0, 0.033] 
-  end_pos: [-0.0135, 0, 0.033]
-  # end_pos: [0.7854, 0.4, 0.]
+  pos_ctrl: True
+  ori_ctrl: True
+
+  start_xyz: [-0.015, -0.001, 0.033]
+  end_xyz: [-0.015, -0.001, 0.033]
+
+  start_rpy: [0.785, 0.785, 0.]
+  end_rpy: [0.785, 0.785, 1.57]
 
 dataset:
   max_episodes: 100
   dstdir: local/datasets/
-  name: tacto_rolling_die/dataset_0000/train
+  name: tacto/die/dataset_0000/train
