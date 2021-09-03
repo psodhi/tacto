@@ -27,24 +27,23 @@ digits:
 
 object:
   urdf_path: "objects/cube_small.urdf"
-
-  ## resting on face
-  # base_position: [-0.015, 0, 0.033]
-  # base_orientation: [0.0, 0.0, 0.0, 1.0]
-
-  ## resting on edge
-  # base_position: [-0.015, 0, 0.033]
-  # base_orientation: [0.0, -0.3826834323650898, 0.0, 0.9238795325112867]
+  global_scaling: 0.15
 
   ## resting on corner
   base_position: [-0.015, -0.001, 0.033]
   base_orientation: [0.3535533905932738, 0.3535533905932738, -0.14644660940672624, 0.8535533905932737]
 
-  global_scaling: 0.15
+  ## resting on edge
+  # base_position: [-0.015, 0, 0.033]
+  # base_orientation: [0.0, -0.3826834323650898, 0.0, 0.9238795325112867]
+
+  ## resting on face
+  # base_position: [-0.015, 0, 0.033]
+  # base_orientation: [0.0, 0.0, 0.0, 1.0]
 
 object_control_panel:
   slider_params:
-    position_low: [-0.03, -0.03, 0.032]
+    position_low: [-0.03, -0.03, 0.02]
     position_high: [0.03, 0.03, 0.1]
 
 pybullet_camera:
@@ -58,18 +57,24 @@ renderer:
   silhouette: True
 
 waypoints:
-  nsteps: 400
+  nsteps: 300
 
-  pos_ctrl: True
+  pos_ctrl: False
   ori_ctrl: True
 
-  start_xyz: [-0.015, -0.001, 0.033]
-  end_xyz: [-0.015, -0.001, 0.033]
+  ## rotations about a corner
+  start_xyz: [[-0.015, -0.001, 0.033], [-0.015, -0.001, 0.033]]
+  end_xyz: [[-0.015, -0.001, 0.033], [-0.015, -0.001, 0.033]]
+  start_rpy: [[0.785, 0.785, 0.], [0.785, 0.785, 1.57]]
+  end_rpy: [[0.785, 0.785, 1.57], [0.785, 0.785, 0.]]
 
-  start_rpy: [0.785, 0.785, 0.]
-  end_rpy: [0.785, 0.785, 1.57]
+  ## rotations about an edge
+  # start_xyz: [[-0.015, -0.001, 0.033], [-0.015, -0.001, 0.033]]
+  # end_xyz: [[-0.015, -0.001, 0.033], [-0.015, -0.001, 0.033]]
+  # start_rpy: [[0., -1.2, 0.], [0., -0.5, 0.]]
+  # end_rpy: [[0., -0.5, 0.], [0., -1.2, 0.]]
 
 dataset:
-  max_episodes: 100
+  max_episodes: 10
   dstdir: local/datasets/
-  name: tacto/die/dataset_0000/train
+  name: tacto/cube/dataset_0000/train

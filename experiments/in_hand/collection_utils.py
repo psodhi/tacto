@@ -37,21 +37,27 @@ def get_wps_posn_back_forth(center_pos, end_pos, nsteps, noise_scale=0):
     return waypoints
 
 
-def get_wps_pose(start_pose, end_pose, nsteps, noise_scale=0):
-
-    t_range = np.linspace(0., 1., nsteps)
-    start_xyz, start_rpy = start_pose
-    end_xyz, end_rpy = end_pose
-
+def get_wps_pose(start_xyz_list, start_rpy_list, end_xyz_list, end_rpy_list, nsteps, noise_scale=0):
+    
     waypoints = []
-    for t in t_range:
-        curr_pos = (1 - t) * start_xyz + t * end_xyz
-        curr_rpy = (1 - t) * start_rpy + t * end_rpy
-        curr_ori = p.getQuaternionFromEuler(curr_rpy)
 
-        pose = (curr_pos, curr_ori)
-        waypoints.append(pose)
+    n_segments = len(start_xyz_list)
+    nsteps_seg = int(nsteps / n_segments)
 
+    for seg_idx in range(0, n_segments):
+
+        t_range = np.linspace(0., 1., nsteps_seg)
+        start_xyz, start_rpy = start_xyz_list[seg_idx], start_rpy_list[seg_idx]
+        end_xyz, end_rpy = end_xyz_list[seg_idx], end_rpy_list[seg_idx]
+
+        for t in t_range:
+            curr_pos = (1 - t) * start_xyz + t * end_xyz
+            curr_rpy = (1 - t) * start_rpy + t * end_rpy
+            curr_ori = p.getQuaternionFromEuler(curr_rpy)
+
+            pose = (curr_pos, curr_ori)
+            waypoints.append(pose)
+    
     return waypoints
 
 
@@ -113,7 +119,7 @@ class DataLogger:
         self.data_csvname = "poses_imgs"
 
     def start_new_episode(self, obj, step_idx, eps_idx):
-        obj.reset(rand_mag_pos=0.1)
+        obj.reset(rand_mag_pos=0.0)
         step_idx = 0
         eps_idx = eps_idx + 1
 

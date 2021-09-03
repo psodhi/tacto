@@ -22,7 +22,7 @@ log = logging.getLogger(__name__)
 
 BASE_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
         
-@hydra.main(config_path="conf/", config_name="rolling_data_collection")
+@hydra.main(config_path="conf/", config_name="cube")
 def main(cfg):
 
     # bg = cv2.imread("conf/bg_digit_240_320.jpg")
@@ -52,15 +52,19 @@ def main(cfg):
     
     # Get (position, orientation) waypoints
     wps_setter = WaypointSetter(obj)
-    pose_wps = get_wps_pose(start_pose=(np.asarray(cfg.waypoints.start_xyz), np.asarray(cfg.waypoints.start_rpy)),
-                                 end_pose=(np.asarray(cfg.waypoints.end_xyz), np.asarray(cfg.waypoints.end_rpy)), 
-                                 nsteps=cfg.waypoints.nsteps)
+    pose_wps = get_wps_pose(start_xyz_list=np.asarray(cfg.waypoints.start_xyz), start_rpy_list=np.asarray(cfg.waypoints.start_rpy),
+                            end_xyz_list=np.asarray(cfg.waypoints.end_xyz), end_rpy_list=np.asarray(cfg.waypoints.end_rpy), nsteps=cfg.waypoints.nsteps)
 
     # Init data logger object
     data_logger = DataLogger(cfg)
 
+    # Create control panel to control the 6DoF pose of the object
+    panel = px.gui.PoseControlPanel(obj, **cfg.object_control_panel)
+    panel.start()
+    log.info("Use the slides to move the object until in contact with the DIGIT")
+
     # Start p.stepSimulation in another thread
-    set_gui_params()
+    # set_gui_params()
     t = px.utils.SimulationThread(real_time_factor=1.0)
     t.start()
 
@@ -69,7 +73,7 @@ def main(cfg):
     obj, step_idx, eps_idx = data_logger.start_new_episode(obj, step_idx, eps_idx)
     nsteps = cfg.waypoints.nsteps
     contact_flag, no_contact_count = 1, 0
-
+    
     while True:
         # reset new episode
         reset_flag = (obj.get_base_pose()[0][2] <= 0.01) | (step_idx == nsteps) | (contact_flag & (no_contact_count > 10))
