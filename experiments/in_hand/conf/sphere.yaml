@@ -1,0 +1,72 @@
+hydra:
+  run:
+    dir: ./
+
+tacto:
+  width: 120
+  height: 160
+  visualize_gui: True
+
+digits:
+  top:
+    urdf_path: "../../meshes/digit.urdf"
+    base_position: [0, 0.1, 0.063]
+
+    # quaternion from p.getQuaternionFromEuler([0, pi/2, pi])
+    base_orientation: [-0.707107, 0.0, 0.707107, 0.0]
+
+    use_fixed_base: False
+
+  bottom:
+    urdf_path: "../../meshes/digit.urdf"
+    base_position: [0, 0, 0.011]
+
+    # quaternion from p.getQuaternionFromEuler([0, -pi/2, 0])
+    base_orientation: [0.0, -0.707106, 0.0, 0.707106]
+    use_fixed_base: True
+
+object:
+  urdf_path: "objects/sphere_small.urdf"
+  global_scaling: 0.15
+
+  ## resting on corner
+  base_position: [-0.015, -0.001, 0.036]
+  base_orientation: [0.3535533905932738, 0.3535533905932738, -0.14644660940672624, 0.8535533905932737]
+
+object_control_panel:
+  slider_params:
+    position_low: [-0.03, -0.03, 0.02]
+    position_high: [0.03, 0.03, 0.1]
+
+pybullet_camera:
+  cameraDistance: 0.12
+  cameraYaw: 0
+  cameraPitch: -20
+  cameraTargetPosition: [0, 0, 0.02]
+
+renderer:
+  normal: True
+  silhouette: True
+
+waypoints:
+  nsteps: 300
+
+  pos_ctrl: True
+  ori_ctrl: False
+
+  # Motion dataset_0000
+  # start_xyz: [[-0.023,  0.004, 0.035], [-0.008, -0.004, 0.035], [-0.008,  0.004, 0.035], [-0.023, -0.004, 0.035]]
+  # end_xyz:   [[-0.008, -0.004, 0.035], [-0.008,  0.004, 0.035], [-0.023, -0.004, 0.035], [-0.023,  0.004, 0.035]]
+  # start_rpy: [[ 0.000,  0.000, 0.000], [ 0.000,  0.000, 0.000], [ 0.000,  0.000, 0.000], [ 0.000,  0.000, 0.000]]
+  # end_rpy:   [[ 0.000,  0.000, 0.000], [ 0.000,  0.000, 0.000], [ 0.000,  0.000, 0.000], [ 0.000,  0.000, 0.000]]
+
+  # Motion dataset_0001
+  start_xyz: [[-0.023,  0.004, 0.035], [-0.008,  0.004, 0.035], [-0.008, -0.004, 0.035], [-0.023, -0.004, 0.035]]
+  end_xyz:   [[-0.008,  0.004, 0.035], [-0.008, -0.004, 0.035], [-0.023, -0.004, 0.035], [-0.023,  0.004, 0.035]]
+  start_rpy: [[ 0.000,  0.000, 0.000], [ 0.000,  0.000, 0.000], [ 0.000,  0.000, 0.000], [ 0.000,  0.000, 0.000]]
+  end_rpy:   [[ 0.000,  0.000, 0.000], [ 0.000,  0.000, 0.000], [ 0.000,  0.000, 0.000], [ 0.000,  0.000, 0.000]]
+
+dataset:
+  max_episodes: 5
+  dstdir: local/datasets/
+  name: tacto/sphere/dataset_0001/train

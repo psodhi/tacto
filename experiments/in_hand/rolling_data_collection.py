@@ -108,7 +108,7 @@ def main(cfg):
 
         step_idx = step_idx + 1
         
-        if (eps_idx > cfg.dataset.max_episodes):
+        if (eps_idx > cfg.dataset.max_episodes - 1):
             break
 
     t.stop()

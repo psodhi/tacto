@@ -81,7 +81,7 @@ def set_gui_params(cam_params=None):
 
 
 class WaypointSetter():
-    def __init__(self, robot, max_force=100, slider_params={}):
+    def __init__(self, robot, max_force=1000000000, slider_params={}):
         super().__init__()
         self.robot = robot
         self.max_force = max_force
@@ -101,10 +101,10 @@ class WaypointSetter():
         )
 
     def update(self, pos=None, ori=None):
-
         pos = pos if pos is not None else self.robot.get_base_pose()[0]
         ori = ori if ori is not None else self.robot.get_base_pose()[1]
-
+        # print(f'[SET]: {pos}')
+        print(f'[SET]: {p.getEulerFromQuaternion(ori)}')
         p.changeConstraint(self.cid, pos, ori, maxForce=self.max_force)
 
 
@@ -170,6 +170,10 @@ class DataLogger:
         # object, digit poses
         # obj_pos, obj_ori = obj.get_base_pose()[0], p.getMatrixFromQuaternion(obj.get_base_pose()[1])
         obj_pos, obj_ori = self.get_pose_from_renderer(renderer)
+        print(f'[GET]: {p.getEulerFromQuaternion(obj.get_base_pose()[1])}')
+        #print(f'[GET]: {obj.get_base_pose()[1]}')
+        #print(f'[GET]: {obj.get_base_pose()[0]}')
+
         digit_top_pos, digit_top_ori = digit_top.get_base_pose(
         )[0], p.getMatrixFromQuaternion(digit_top.get_base_pose()[1])
         digit_bot_pos, digit_bot_ori = digit_bottom.get_base_pose(
