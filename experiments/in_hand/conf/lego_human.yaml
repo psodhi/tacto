@@ -1,0 +1,101 @@
+hydra:
+  run:
+    dir: ./
+
+tacto:
+  width: 120
+  height: 160
+  visualize_gui: True
+
+digits:
+  top:
+    urdf_path: "../../meshes/digit.urdf"
+    base_position: [0, 0.1, 0.063]
+
+    # quaternion from p.getQuaternionFromEuler([0, pi/2, pi])
+    base_orientation: [-0.707107, 0.0, 0.707107, 0.0]
+
+    use_fixed_base: False
+
+  bottom:
+    urdf_path: "../../meshes/digit.urdf"
+    base_position: [0, 0, 0.011]
+
+    # quaternion from p.getQuaternionFromEuler([0, -pi/2, 0])
+    base_orientation: [0.0, -0.707106, 0.0, 0.707106]
+    use_fixed_base: True
+
+object:
+  urdf_path: "objects/lego_human.urdf"
+  global_scaling: 0.07 
+
+  ## lying down 
+  # base_position: [-0.007, -0.001, 0.028]
+  # base_orientation: [ 0, 0, 0.7068252, 0.7073883 ]
+
+  ## standing up
+  # base_position: [-0.015, 0.000, 0.028]
+  # base_orientation: [ 0.8509035, 0, 0, 0.525322 ]
+
+  ## lying on the side
+  base_position: [-0.009219503391534385, -0.00035859755741428264, 0.028767309018328305]
+  base_orientation: [-0.48994958969594266, 0.498350542042772, 0.50955980477453, 0.5019411740040819]
+
+object_control_panel:
+  slider_params:
+    position_low: [-0.03, -0.03, 0.02]
+    position_high: [0.03, 0.03, 0.1]
+
+pybullet_camera:
+  cameraDistance: 0.12
+  cameraYaw: 0
+  cameraPitch: -20
+  cameraTargetPosition: [0, 0, 0.02]
+
+renderer:
+  normal: True
+  silhouette: True
+
+waypoints:
+  nsteps: 300
+
+  pos_ctrl: False
+  ori_ctrl: True
+
+# REMEMBER TO SET INITIAL CONDITIONS ACCORDINGLY UP
+  # dataset_0000: lego_human standing up 
+  # start_xyz:  [[-0.015, 0.000, 0.028], [-0.015, 0.000, 0.028],  [-0.015, 0.000, 0.028]]
+  # end_xyz:    [[-0.015, 0.000, 0.028], [-0.015, 0.000, 0.028],  [-0.015, 0.000, 0.028]]
+  # start_rpy:  [[ 1.000,  0.000, 0.000], [1.000,  0.000, 1.000], [1.400,  0.000, 1.000]]
+  # end_rpy:    [[ 1.000,  0.000, 1.000], [1.400,  0.000, 1.000], [1.400,  0.000, 0.000]]
+
+  ## dataset_0001: lego_human pitching on side
+  start_xyz: [[-0.007, -0.001, 0.031], [-0.007, -0.001, 0.031]]
+  end_xyz: [[-0.007, -0.001, 0.031], [-0.007, -0.001, 0.031]]
+  start_rpy: [[1.57, 1.57, 3.14], [1.10, 1.57, 3.14]]
+  end_rpy: [[1.10, 1.57, 3.14], [1.57, 1.57, 3.14]]
+
+
+## DEPRECATED
+  # # lego_human lying down pitch
+  # start_xyz: [[-0.015, 0.0, 0.035], [-0.015, 0.0, 0.035]]
+  # end_xyz: [[-0.015, 0.0, 0.035], [-0.015, 0.0, 0.035]]
+  # start_rpy: [[0.0, 1.0, 1.57], [0.0, -1.0, 1.57]]
+  # end_rpy: [[0.0, -1.0, 1.57], [0.0, 1.0, 1.57]]
+
+  # # lego_human lying down roll
+  # start_xyz: [[-0.015, 0.0, 0.035], [-0.015, 0.0, 0.035]]
+  # end_xyz: [[-0.015, 0.0, 0.035], [-0.015, 0.0, 0.035]]
+  # start_rpy: [[0.0, 0.0, 1.57], [1.0, 0.0, 1.57]]
+  # end_rpy: [[1.0, 0.0, 1.57], [0.0, 0.0, 1.57]]
+
+  # # lego_human lying down yaw
+  # start_xyz: [[-0.015, 0.0, 0.035], [-0.015, 0.0, 0.035], [-0.015, 0.0, 0.035], [-0.015, 0.0, 0.035]]
+  # end_xyz: [[-0.015, 0.0, 0.035], [-0.015, 0.0, 0.035], [-0.015, 0.0, 0.035], [-0.015, 0.0, 0.035]]
+  # start_rpy: [[0.0, 0.0, 1.57], [0.0, 0.0, 1.0],[0.0, 0.0, 1.57], [0.0, 0.0, 2.2]]
+  # end_rpy: [[0.0, 0.0, 1.0], [0.0, 0.0, 1.57], [0.0, 0.0, 2.2],[0.0, 0.0, 1.57]]
+
+dataset:
+  max_episodes: 5
+  dstdir: local/datasets/
+  name: tacto/lego_human/dataset_0001/train

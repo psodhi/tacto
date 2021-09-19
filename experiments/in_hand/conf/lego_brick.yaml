@@ -1,0 +1,89 @@
+hydra:
+  run:
+    dir: ./
+
+tacto:
+  width: 120
+  height: 160
+  visualize_gui: True
+
+digits:
+  top:
+    urdf_path: "../../meshes/digit.urdf"
+    base_position: [0, 0.1, 0.063]
+
+    # quaternion from p.getQuaternionFromEuler([0, pi/2, pi])
+    base_orientation: [-0.707107, 0.0, 0.707107, 0.0]
+
+    use_fixed_base: False
+
+  bottom:
+    urdf_path: "../../meshes/digit.urdf"
+    base_position: [0, 0, 0.011]
+
+    # quaternion from p.getQuaternionFromEuler([0, -pi/2, 0])
+    base_orientation: [0.0, -0.707106, 0.0, 0.707106]
+    use_fixed_base: True
+
+object:
+  urdf_path: "objects/lego_brick.urdf"
+  global_scaling: 0.05 
+
+  ## [dataset_0000] lego_brick  (lyging on bump)
+  base_position: [-0.015, -0.001, 0.0322]
+  base_orientation: [ 0, -0.7068252, 0, 0.7073883 ]
+
+  # [dataset_0001] lego_brick  (on edge)
+  # base_position: [-0.015, 0.00, 0.0322]
+  # base_orientation: [ 0, -0.7068252, 0, 0.7073883 ]
+
+object_control_panel:
+  slider_params:
+    position_low: [-0.03, -0.03, 0.02]
+    position_high: [0.03, 0.03, 0.1]
+
+pybullet_camera:
+  cameraDistance: 0.12
+  cameraYaw: 0
+  cameraPitch: -20
+  cameraTargetPosition: [0, 0, 0.02]
+
+renderer:
+  normal: True
+  silhouette: True
+
+waypoints:
+  nsteps: 300
+
+  pos_ctrl: False
+  ori_ctrl: True
+
+  # yaw
+  # start_xyz: [[-0.015, -0.001, 0.037], [-0.015, -0.001, 0.037]]
+  # end_xyz: [[-0.015, -0.001, 0.037], [-0.015, -0.001, 0.037]]
+  # start_rpy: [[-1.57, 0., -1.], [-1.57, 0., 1.]]
+  # end_rpy: [[-1.57, 0., 1.], [-1.57, 0., -1.]]
+
+  ## Motion 1 pos_ctrl: False ori_ctrl: True   base_position: [-0.015, -0.001, 0.0322] base_orientation: [ 0, -0.7068252, 0, 0.7073883 ]
+  # start_xyz: [[-0.015, -0.001, 0.032], [-0.015, -0.001, 0.032], [-0.015, -0.001, 0.032], [-0.015, -0.001, 0.032]]
+  # end_xyz:   [[-0.015, -0.001, 0.032], [-0.015, -0.001, 0.032], [-0.015, -0.001, 0.032], [-0.015, -0.001, 0.032]]
+  # start_rpy: [[-1.570,  0.000, 0.000], [-1.570,  0.000, 1.570], [-1.570,  0.000, 0.000], [-1.570,  0.500, 0.000]]
+  # end_rpy:   [[-1.570,  0.000, 1.570], [-1.570,  0.000, 0.000], [-1.570,  0.500, 0.000], [-1.570,  0.000, 0.000]]
+
+  ## [dataset_0000] 
+  ## Motion 2 pos_ctrl: False ori_ctrl: True base_position: [-0.015, -0.001, 0.0322] base_orientation: [ 0, -0.7068252, 0, 0.7073883 ]
+  # start_xyz: [[-0.015, -0.001, 0.032], [-0.015, -0.001, 0.032], [-0.015, -0.001, 0.032], [-0.015, -0.001, 0.032]]
+  # end_xyz:   [[-0.015, -0.001, 0.032], [-0.015, -0.001, 0.032], [-0.015, -0.001, 0.032], [-0.015, -0.001, 0.032]]
+  # start_rpy: [[-1.570,  0.000, 0.000], [-1.570,  0.000, 1.570], [-1.570,  0.500, 1.570], [-1.570,  0.500, 0.000]]
+  # end_rpy:   [[-1.570,  0.000, 1.570], [-1.570,  0.500, 1.570], [-1.570,  0.500, 0.000], [-1.570,  0.000, 0.000]]
+
+  ## [dataset_0001]
+  start_xyz: [[-0.015,  0.000, 0.032], [-0.015,  0.000, 0.032], [-0.015,  0.000, 0.032], [-0.015,  0.000, 0.032], [-0.015,  0.000, 0.032], [-0.015,  0.000, 0.032]]
+  end_xyz:   [[-0.015,  0.000, 0.032], [-0.015,  0.000, 0.032], [-0.015,  0.000, 0.032], [-0.015,  0.000, 0.032], [-0.015,  0.000, 0.032], [-0.015,  0.000, 0.032]]
+  start_rpy: [[-1.570,  1.570, 0.000], [-1.570,  0.785, 0.000], [-1.570,  1.570, 0.000], [-1.570,  0.785, 0.000], [-1.570,  0.785, 0.785], [-1.570,  0.785, 0.000]]
+  end_rpy:   [[-1.570,  0.785, 0.000], [-1.570,  1.570, 0.000], [-1.570,  0.785, 0.000], [-1.570,  0.785, 0.785], [-1.570,  0.785, 0.000], [-1.570,  1.570, 0.000]]
+
+dataset:
+  max_episodes: 5
+  dstdir: local/datasets/
+  name: tacto/lego_brick/dataset_0000/train
