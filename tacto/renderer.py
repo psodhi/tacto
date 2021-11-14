@@ -21,6 +21,7 @@ Default is pyglet, which requires active window
 # import os
 # os.environ["PYOPENGL_PLATFORM"] = "egl"
 
+import os
 import logging
 
 import cv2
@@ -51,6 +52,21 @@ def euler2matrix(angles=[0, 0, 0], translation=[0, 0, 0], xyz="xyz", degrees=Fal
 #     pose[:3, 3] = translation
 #     pose[:3, :3] = r
 #     return pose
+class ShaderCache():
+    def __init__(self, shader_name):
+        self.program = None
+        self.name = shader_name
+        self.pkg_dir = os.path.dirname(__file__)
+
+    def get_program(self, vertex_shader, fragment_shader, geometry_shader=None, defines=None):
+        if self.program is None:
+            self.program=pyrender.shader_program.ShaderProgram(
+                f"{self.pkg_dir}/shaders/{self.name}.vert",
+                f"{self.pkg_dir}/shaders/{self.name}.frag", defines=defines)
+        return self.program
+class NormalShaderCache(ShaderCache):
+    def __init__(self):
+        super(NormalShaderCache, self).__init__("mesh_normals")
 
 
 class Renderer:
@@ -89,6 +105,12 @@ class Renderer:
         self.spot_light_enabled = (
             "spot" in self.conf.sensor.lights and self.conf.sensor.lights.spot
         )
+
+        self.normal_render_enabled = (
+            "render" in self.conf.sensor.normal and self.conf.sensor.normal.render
+        )
+        if self.normal_render_enabled:
+            self.normal_cache = NormalShaderCache()
 
         self.flags_render = 0
 
@@ -142,8 +164,11 @@ class Renderer:
         self._init_light()
 
         self.r = pyrender.OffscreenRenderer(self.width, self.height)
-
-        colors, depths = self.render(object_poses=None, noise=False, calibration=False)
+        
+        if self.normal_render_enabled:
+            colors, depths, normals = self.render(object_poses=None, noise=False, calibration=False)
+        else:
+            colors, depths = self.render(object_poses=None, noise=False, calibration=False)
 
         self.depth0 = depths
         self._background_sim = colors
@@ -547,6 +572,9 @@ class Renderer:
         """
         colors, depths = [], []
 
+        if self.normal_render_enabled: normals = []
+        default_program_cache = self.r._renderer._program_cache
+        
         for i in range(self.nb_cam):
             # Set the main camera node for rendering
             self.scene.main_camera_node = self.camera_nodes[i]
@@ -571,7 +599,17 @@ class Renderer:
             colors.append(color)
             depths.append(depth)
 
-        return colors, depths
+            # render normals using custom shader
+            if self.normal_render_enabled:
+                self.r._renderer._program_cache = self.normal_cache
+                normal, _ = self.r.render(self.scene)
+                self.r._renderer._program_cache = default_program_cache
+                normals.append(normal)
+        
+        return_tuple = colors, depths
+        if self.normal_render_enabled: return_tuple = colors, depths, normals
+
+        return return_tuple
 
     def render_from_depth(self, depth, noise=True, calibration=True, scale=1.0):
         """

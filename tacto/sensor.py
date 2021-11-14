@@ -240,16 +240,25 @@ class Sensor:
     @property
     def static(self):
         if self._static is None:
-            colors, _ = self.renderer.render(noise=False)
+            if self.renderer.normal_render_enabled:
+                colors, depths, normals = self.renderer.render(noise=False)
+            else:
+                colors, depths = self.renderer.render(noise=False)
             depths = [np.zeros_like(d0) for d0 in self.renderer.depth0]
             self._static = (colors, depths)
+            if self.renderer.normal_render_enabled: self._static = (colors, depths, normals)
 
         return self._static
 
     def _render_static(self):
-        colors, depths = self.static
-        colors = [self.renderer._add_noise(color) for color in colors]
-        return colors, depths
+        if self.renderer.normal_render_enabled:
+            colors, depths, normals = self.static
+            colors = [self.renderer._add_noise(color) for color in colors]
+            return colors, depths, normals
+        else:
+            colors, depths = self.static
+            colors = [self.renderer._add_noise(color) for color in colors]
+            return colors, depths
 
     def render(self):
         """
@@ -260,6 +269,7 @@ class Sensor:
 
         colors = []
         depths = []
+        if self.renderer.normal_render_enabled: normals = []
 
         for i in range(self.nb_cam):
             cam_name = "cam" + str(i)
@@ -270,18 +280,29 @@ class Sensor:
             if normal_forces:
                 position, orientation = self.cameras[cam_name].get_pose()
                 self.renderer.update_camera_pose(position, orientation)
-                color, depth = self.renderer.render(self.object_poses, normal_forces)
+
+                if self.renderer.normal_render_enabled:
+                    color, depth, normal = self.renderer.render(self.object_poses, normal_forces)
+                else:
+                    color, depth = self.renderer.render(self.object_poses, normal_forces)
 
                 # Remove the depth from curved gel
                 for j in range(len(depth)):
                     depth[j] = self.renderer.depth0[j] - depth[j]
             else:
-                color, depth = self._render_static()
+                if self.renderer.normal_render_enabled:
+                    color, depth, normal = self._render_static()
+                else:
+                    color, depth = self._render_static()
 
             colors += color
             depths += depth
+            if self.renderer.normal_render_enabled: normals += normal
 
-        return colors, depths
+        return_tuple = colors, depths
+        if self.renderer.normal_render_enabled: return_tuple = colors, depths, normals
+        
+        return return_tuple
 
     def _depth_to_color(self, depth):
         gray = (np.clip(depth / self.zrange, 0, 1) * 255).astype(np.uint8)
